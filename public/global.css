@@ -1,0 +1,71 @@
+/** global.css */
+
+body {
+	line-height: 1.6;
+	margin: 0;
+	padding: 0;
+	background-image: url("/images/background_main.jpg");
+	background-size: cover;
+	background-attachment: fixed;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+a {
+	text-decoration: none;
+	color: black;
+}
+
+button {
+		background-color: rgb(49, 80, 18);
+		color: rgba(218, 160, 78, 0.8);
+		padding: 10px 20px;
+		border-radius: 5px;
+		cursor: pointer;
+		font-size: 16px;
+		width: 140px;
+		margin: 4px;
+}
+
+button:hover {
+	background-color: rgb(58, 91, 25);
+}
+
+/* on klick behaviour */
+button:not(:disabled):active {
+	font-size: 15px;
+}
+
+main {
+	padding: 20px;
+	max-width: 800px;
+	margin: 20px auto;
+	background-color: rgba(251, 242, 210, 0.6);
+	border-radius: 10px;
+	}
+
+header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 auto;
+	padding: 1rem;
+	background-color: rgba(218, 160, 78, 0.8);
+}
+
+.logo {
+	margin-bottom: 10px;
+	max-height: 150px;
+	width: auto;
+}
+
+footer
+{
+	display: flex;
+	bottom: 0;
+	background-color: rgba(218, 160, 78, 0.8);;
+	text-align: center;
+	padding: 0px 10px;
+	width: 100%;
+	position: fixed;
+}
