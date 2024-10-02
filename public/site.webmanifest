@@ -1,6 +1,5 @@
 {
     "name":"SproutSchedule",
-    "short_name": "Sprout",
     "start_url": "/",
     "icons":
     [
@@ -17,8 +16,8 @@
     ],
     "theme_color":"#ffffff",
     "background_color":"#ffffff",
-    "display":"standalone",
     "orientation": "portrait",
-    "scope": "/",
-    "description": "SproutSchedule - Smart Gardening"
+    "description": "SproutSchedule - Smart Gardening",
+    "display_override": ["fullscreen", "minimal-ui", "standalone"],
+    "display":"standalone"
 }
