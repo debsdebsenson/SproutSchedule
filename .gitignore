@@ -1,6 +1,7 @@
 # Misc
 node_modules
 public/build
+docs/
 
 # Output
 .output
