@@ -1,4 +1,4 @@
-<!-- +error.svelte -->
+<!-- src/routes/+error.svelte -->
 
 <script>
 // @ts-nocheck

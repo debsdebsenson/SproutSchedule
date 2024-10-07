@@ -1,7 +1,22 @@
-<script>
+<!-- src/routes/+page.svelte -->
+
+<script  lang="ts">
 	import FileUpload from './FileUpload.svelte';
+	import Geodata from '$lib/Geodata.svelte';
 	import welcome from '$lib/images/placeholder.webp';
 	import welcome_fallback from '$lib/images/placeholder.png';
+
+	let city: string = 'Unknown';
+	let error: string | null = null;
+
+	function handleCityUpdate(event: { detail: { city: string; }; }) {
+		city = event.detail.city;
+		error = null;
+	}
+
+	function handleError(event: { detail: { error: string | null; }; }) {
+		error = event.detail.error;
+	}
 </script>
 
 <svelte:head>
@@ -22,6 +37,20 @@
 
 	<FileUpload />
 </section>
+
+<Geodata 
+    bind:city 
+    bind:error 
+    on:cityUpdated={handleCityUpdate}
+    on:error={handleError}
+/>
+
+<main>
+    {#if !error}
+        <p>Your city: {city}</p>
+    {/if}
+</main>
+
 
 <style>
 	section {
