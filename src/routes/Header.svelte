@@ -1,4 +1,4 @@
-<!-- Header.svelte -->
+<!-- src/routes/Header.svelte -->
 
 <script>
 	import { page } from '$app/stores';

@@ -1,8 +1,5 @@
-node_modules
-
 # Misc
-
-key.js
+node_modules
 public/build
 
 # Output

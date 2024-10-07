@@ -1,4 +1,4 @@
-<!-- +layout.svelte -->
+<!-- src/routes/+layout.svelte -->
 
 <script>
 	import Header from './Header.svelte';

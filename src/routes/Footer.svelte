@@ -1,4 +1,4 @@
-<!-- Footer.svelte -->
+<!-- src/routes/Footer.svelte -->
 
 <script>
 </script>
