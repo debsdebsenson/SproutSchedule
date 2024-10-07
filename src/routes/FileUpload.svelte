@@ -1,24 +1,24 @@
 <!-- FileUpload.svelte -->
 
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
     
-    let fileInput;
-    let dropZone;
-    let files = [];
+    let fileInput: HTMLInputElement;
+    let dropZone: HTMLDivElement;
+    let files: any[] = [];
     let uploadStatus = '';
-    let messageTimer;
+    let messageTimer: string | number | NodeJS.Timeout | undefined;
     let elapsedMessageTime = 3000; // Clear messages after 3 seconds
     let timeout = 2000;
-    let duplicateFile = null;
+    let duplicateFile: any;
 
     // Helper function to check if a file is an image based on its type
-    function isImageFile(file) {
+    function isImageFile(file: { type: string; }) {
         return file.type.startsWith('image/');
     }
     
     // Helper function to check if a file is already in the list (prevents duplicates)
-    function isDuplicateFile(newFile) {
+    function isDuplicateFile(newFile: any) {
         return files.some(existingFile => 
             existingFile.file.name === newFile.name && 
             existingFile.file.size === newFile.size
@@ -26,7 +26,7 @@
     }
     
     // Function to handle file selection from both input and drop events
-    function handleFiles(eventFiles) {
+    function handleFiles(eventFiles: any[] | ArrayLike<unknown>) {
         const imageFiles = Array.from(eventFiles).filter(isImageFile);  // Filter out non-image files
         
         for (let file of imageFiles) {
@@ -45,44 +45,81 @@
     }
     
     // Function to add a file to the list with a preview and a unique ID
-    function addFile(file) {
+    async function addFile(file: File) {
         files = [...files, {
-            file,
-            preview: URL.createObjectURL(file),  // Create a URL for previewing the image
-            id: Date.now() + Math.random()  // Generate a unique ID for each file
+            file: file,
+            preview: URL.createObjectURL(file), // Create a URL for previewing the image
+            id: Date.now() + Math.random() // Generate a unique ID for each file
         }];
     }
     
     // Event handler to allow files to be dropped in the drop zone
-    function handleDragOver(event) {
+    function handleDragOver(event: any) {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'copy';  // Set drop effect to indicate copying files
     }
     
     // Event handler for when files are dropped into the drop zone
-    function handleDrop(event) {
+    function handleDrop(event: any) {
         event.preventDefault();
         handleFiles(event.dataTransfer.files);  // Process the dropped files
     }
     
     // Event handler for when files are selected via the input element
-    function handleChange(event) {
+    function handleChange(event:any) {
         handleFiles(event.target.files);  // Process the selected files
     }
-    
-    // TBD: Improve this simulated file upload function
+
+    // Image uploading
     async function uploadFiles() {
-        setMessage('Uploading...');  // Show uploading message
-        await new Promise(resolve => setTimeout(resolve, timeout));  // Simulate delay
-        // TBD: Send the files to a server or store them in the local browser storage
-        setMessage('Upload successful!');  // Show success message
-        // Clean up object URLs to free up memory
-        files.forEach(file => URL.revokeObjectURL(file.preview));
-        files = [];  // Clear the files array after upload
+        setMessage('Uploading...');
+        let results = [];
+        for (let file of files) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file.file);
+                
+                const response = await fetch('/api/classify-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                console.log(result);
+                results.push({
+                    file: file.file.name,
+                    initialClassification: result.initialClassification,
+                    detailedClassification: result.detailedClassification
+                });
+                // TBD: Update UI here to show progress and results
+            } catch (error) {
+                console.error('Upload failed:', error);
+                results.push({ file: file.file.name, error: 'Upload failed' });
+            }
+        }
+        setMessage('Upload and classification complete!');
+        console.log('All results:', results);
+        // TBD: Update the UI to show all results
+        files = [];
+    }
+
+    // Image preparation
+    function fileToBase64(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                if (typeof reader.result === 'string') {
+                    resolve(reader.result.split(',')[1]);
+                } else {
+                    reject(new Error('Failed to read file as Data URL'));
+                }
+            };
+            reader.onerror = error => reject(error);
+        });
     }
     
     // Function to set a status message and clear it after a delay
-    function setMessage(message) {
+    function setMessage(message: string) {
         uploadStatus = message;
         if (messageTimer) clearTimeout(messageTimer);  // Clear existing timer
         messageTimer = setTimeout(() => {
@@ -96,7 +133,7 @@
     }
     
     // Keyboard accessibility: allow file picker to open with Enter or Space keys
-    function handleKeydown(event) {
+    function handleKeydown(event: { key: string; preventDefault: () => void; }) {
         if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             openFilePicker();
@@ -104,7 +141,7 @@
     }
     
     // Function to delete a selected file by ID
-    function deleteFile(id) {
+    function deleteFile(id: any) {
         const fileToDelete = files.find(f => f.id === id);  // Find the file to delete
         if (fileToDelete) {
             URL.revokeObjectURL(fileToDelete.preview);  // Revoke the object URL to free memory
@@ -198,4 +235,88 @@
 </div>
 
 <style>
+    .file-upload {
+	width: 100%;
+	max-width: 500px;
+	margin: 0 auto;
+}
+
+.drop-zone {
+	border: 2px dashed rgb(49, 80, 18);
+	border-radius: 4px;
+	padding: 20px;
+	text-align: center;
+	cursor: pointer;
+	transition: background-color 0.3s ease;
+}
+
+.drop-zone:hover, .drop-zone:focus {
+    background-color: #62431850;
+    outline: none;
+}
+
+input[type="file"] {
+	display: none;
+}
+  
+.status-message {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(251, 242, 210, 0.6);
+    border-left: 6px solid rgb(49, 80, 18);
+}
+
+.image-preview {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.preview-item {
+	width: calc(33.333% - 10px);
+	text-align: center;
+	position: relative;
+}
+
+.preview-item img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 4px;
+}
+
+.delete-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.delete-button:hover {
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+}
+
+.duplicate-prompt {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.duplicate-prompt button {
+    margin-right: 10px;
+    margin-top: 10px;
+}
 </style>
