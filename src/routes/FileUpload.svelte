@@ -8,9 +8,10 @@
     let files: any[] = [];
     let uploadStatus = '';
     let messageTimer: string | number | NodeJS.Timeout | undefined;
-    let elapsedMessageTime = 3000; // Clear messages after 3 seconds
+    let elapsedMessageTime = 3000;
     let timeout = 2000;
     let duplicateFile: any;
+    let classificationResults: any[] = []; // Store classification results
 
     // Helper function to check if a file is an image based on its type
     function isImageFile(file: { type: string; }) {
@@ -85,12 +86,27 @@
                 });
                 const result = await response.json();
                 console.log(result);
+                
+                // Parse the detailed classification
+                let parsedDetails = { commonName: 'None', scientificName: 'None', information: 'None', wikipediaLink: 'None' };
+                if (result.detailedClassification) {
+                    var json = result.detailedClassification.replace("```json\n", "");
+                    json = json.replace("```", "");
+
+                    console.log(json);
+
+                    const parsedResponseObject = JSON.parse(json);
+                    console.log(parsedResponseObject);
+
+                    parsedDetails = parsedResponseObject;
+                }
+                
                 results.push({
                     file: file.file.name,
+                    preview: file.preview,
                     initialClassification: result.initialClassification,
-                    detailedClassification: result.detailedClassification
+                    ...parsedDetails
                 });
-                // TBD: Update UI here to show progress and results
             } catch (error) {
                 console.error('Upload failed:', error);
                 results.push({ file: file.file.name, error: 'Upload failed' });
@@ -98,9 +114,11 @@
         }
         setMessage('Upload and classification complete!');
         console.log('All results:', results);
-        // TBD: Update the UI to show all results
-        files = [];
+        classificationResults = results; // Update the state with classification results
+        console.log("classificationResults: ", classificationResults);
+        files = []; // Clear the files array after upload
     }
+
 
     // Image preparation
     function fileToBase64(file: File): Promise<string> {
@@ -174,6 +192,32 @@
             files.forEach(file => URL.revokeObjectURL(file.preview));
         };
     });
+
+    // Helper functions to get various fields
+    function getFieldValue(result: any, fieldNames: string[]): string | null {
+        const keys = Object.keys(result);
+        const matchingKey = keys.find(key => 
+            fieldNames.some(field => key.toLowerCase().replace(/[_\s]/g, '') === field.toLowerCase())
+        );
+        
+        return matchingKey && result[matchingKey] !== 'None' ? result[matchingKey] : null;
+    }
+
+    function getWikipediaLink(result: any): string | null {
+        return getFieldValue(result, ['wikipedia', 'wikipedialink', 'link', 'wikipedia_link', 'wikipedia link', 'wikipedia-link']);
+    }
+
+    function getCommonName(result: any): string | null {
+        return getFieldValue(result, ['commonname', 'common', 'common_name', 'common name', 'common-name']);
+    }
+
+    function getScientificName(result: any): string | null {
+        return getFieldValue(result, ['scientificname', 'scientific', 'scientific_name', 'scientific name', 'scientific-name']);
+    }
+
+    function getBasicInformation(result: any): string | null {
+        return getFieldValue(result, ['basicinformation', 'information', 'info', 'basicinfo', 'basic', 'basic_information', 'basic information', 'basic-information']);
+    }
 </script>
 
 <div class="file-upload">
@@ -218,10 +262,35 @@
         <!-- Upload button -->
         <button on:click={uploadFiles}>Upload Images</button>
     {/if}
-    
+
     <!-- Display upload status messages -->
     {#if uploadStatus}
         <p class="status-message">{uploadStatus}</p>
+    {/if}
+
+    <!-- Display classification results -->
+    {#if classificationResults.length > 0}
+        <div class="classification-results">
+            <h2>Classification Results</h2>
+            {#each classificationResults as result}
+                <div class="result-item">
+                    <!-- svelte-ignore a11y-img-redundant-alt -->
+                    <div>
+                        <img src={result.preview} alt="Classified image" class="classified-image" />
+                    </div>
+                    <div class="result-details">
+                        <h3>{getCommonName(result) || 'Unknown'} ({getScientificName(result) || 'Unknown'})</h3>
+                        <p>{getBasicInformation(result) || 'No basic information available'}</p>
+                        {#if getWikipediaLink(result)}
+                            <p>
+                                More information available on 
+                                <a href={getWikipediaLink(result)} target="_blank" rel="noopener noreferrer">Wikipedia</a>.
+                            </p>
+                        {/if}
+                    </div>
+                </div>
+            {/each}
+        </div>
     {/if}
     
     <!-- Duplicate file confirmation prompt -->
@@ -235,11 +304,45 @@
 </div>
 
 <style>
+    .result-details a {
+        color: #0645AD;
+        text-decoration: none;
+    }
+
+    .result-details a:hover {
+        text-decoration: underline;
+    }
+
     .file-upload {
-	width: 100%;
-	max-width: 500px;
-	margin: 0 auto;
-}
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .classification-results {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .result-item {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 20px;
+    }
+
+    .classified-image {
+        max-width: 100%; /* Makes sure the image doesn't exceed the width of its container */
+        max-height: 200px; /* Adjust this value as needed to control the max height */
+        object-fit: contain; /* Ensures the image scales proportionally */
+        margin-right: 20px;
+    }
+
+    .result-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 
 .drop-zone {
 	border: 2px dashed rgb(49, 80, 18);

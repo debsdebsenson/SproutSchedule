@@ -95,7 +95,7 @@ async function identifyPlantOrFungus(base64Image: string, mimeType: string, type
         content: [
           {
             type: "text",
-            text: `What ${type} is this? Please provide its scientific name and common name(s) if possible.`
+            text: `What ${type} is this? Please provide with this patter the following information as raw JSON object with the following fields: common name, scientific name, wikipedia link, basic information. If othere is no information about any of these categories add "None" please.`
           },
           {
             type: "image_url",
