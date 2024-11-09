@@ -16,6 +16,7 @@
     import ImagePreview from '$lib/components/ImagePreview.svelte';
     import ClassificationResults from '$lib/components/ClassificationResults.svelte';
     import DuplicatePrompt from '$lib/components/DuplicatePrompt.svelte';
+    import RandomLoadingSpinner from '$lib/components/loading/RandomSpinner.svelte';
 
     // State variables
     let files: any[] = []; // Array to store uploaded files
@@ -23,6 +24,7 @@
     let messageTimer: NodeJS.Timeout | undefined; // Timer for clearing status messages
     let duplicateFile: File | null = null; // Stores duplicate file for confirmation
     let classificationResults: any[] = []; // Stores results from image classification
+    let isLoading = false; // Loading state for the loading spinner
 
     /**
      * Checks if a file is an image by examining its MIME type.
@@ -82,11 +84,13 @@
      * Uploads files for classification.
      * Sends each file to the API and processes the results.
      */
-    async function uploadFiles() {
+     async function uploadFiles() {
+        isLoading = true;
         setMessage('Uploading...');
         let results = [];
-        for (let file of files) {
-            try {
+        
+        try {
+            for (let file of files) {
                 const formData = new FormData();
                 formData.append('image', file.file);
                 const response = await fetch('/api/classify-image', {
@@ -94,6 +98,7 @@
                     body: formData
                 });
                 const result = await response.json();
+
                 let parsedDetails = { commonName: 'None', scientificName: 'None', information: 'None', wikipediaLink: 'None' };
                 if (result.detailedClassification) {
                     const json = result.detailedClassification
@@ -107,14 +112,15 @@
                     initialClassification: result.initialClassification,
                     ...parsedDetails
                 });
-            } catch (error) {
-                console.error('Upload failed:', error);
-                results.push({ file: file.file.name, error: 'Upload failed' });
             }
+        } catch (error) {
+            console.error('Upload failed:', error);
+        } finally {
+            isLoading = false;
+            setMessage('Upload and classification complete!');
+            classificationResults = results;
+            files = [];
         }
-        setMessage('Upload and classification complete!');
-        classificationResults = results;
-        files = [];
     }
 
     /**
@@ -193,6 +199,11 @@
             onConfirm={handleDuplicateConfirm}
             onCancel={() => duplicateFile = null}
         />
+    {/if}
+
+    <!-- Conditionally render the RandomLoadingSpinner if an image upload process is in progress -->
+    {#if isLoading}
+        <RandomLoadingSpinner />
     {/if}
 </div>
 
