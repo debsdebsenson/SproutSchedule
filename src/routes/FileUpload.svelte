@@ -18,6 +18,11 @@
     import DuplicatePrompt from '$lib/components/DuplicatePrompt.svelte';
     import RandomLoadingSpinner from '$lib/components/loading/RandomSpinner.svelte';
 
+    // TBD: Remove for production!
+    // Imports for the API call mock
+    import { dev } from '$app/environment';
+    import { POST as mockPost } from '$lib/mock/mockClassificationApi';
+
     // State variables
     let files: any[] = []; // Array to store uploaded files
     let uploadStatus = ''; // Current status message of the upload process
@@ -80,10 +85,63 @@
         }];
     }
 
+
+    /**
+     * TBD: Remove for production!
+     * MOCK for the upload of files for classification.
+     * Randomly returns either a "plant", "fungus", or "else" response with
+     * delays to simulate network latency. It matches the structure of the
+     * real API responses and includes error handling similar to the real API.
+     */
+    async function uploadFiles() {
+        isLoading = true;
+        setMessage('Uploading...');
+        let results: any[] = [];
+        
+        try {
+            for (let file of files) {
+                const formData = new FormData();
+                formData.append('image', file.file);
+                
+                // Use mock API in development, real API in production
+                const response = dev 
+                    ? await mockPost(formData)
+                    : await fetch('/api/classify-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                const result = await response.json();
+                
+                let parsedDetails = { commonName: 'None', scientificName: 'None', information: 'None', wikipediaLink: 'None' };
+                if (result.detailedClassification) {
+                    const json = result.detailedClassification
+                        .replace("```json\n", "")
+                        .replace("```", "");
+                    parsedDetails = JSON.parse(json);
+                }
+                results.push({
+                    file: file.file.name,
+                    preview: file.preview,
+                    initialClassification: result.initialClassification,
+                    ...parsedDetails
+                });
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+        } finally {
+            isLoading = false;
+            setMessage('Upload and classification complete!');
+            classificationResults = results;
+            files = [];
+        }
+    }
+
     /**
      * Uploads files for classification.
      * Sends each file to the API and processes the results.
      */
+     /*
      async function uploadFiles() {
         isLoading = true;
         setMessage('Uploading...');
@@ -122,6 +180,7 @@
             files = [];
         }
     }
+    */
 
     /**
      * Sets a temporary status message.
