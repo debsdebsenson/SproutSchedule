@@ -56,7 +56,7 @@ const mockResponses: Record<string, ClassificationResponse> = {
  * @param max - Maximum delay in milliseconds (default: 2000ms)
  * @returns Promise that resolves after the random delay
  */
-const simulateDelay = (min: number = 500, max: number = 2000): Promise<void> => {
+const simulateDelay = (min: number = 100, max: number = 200): Promise<void> => {
     const delay = Math.random() * (max - min) + min;
     return new Promise(resolve => setTimeout(resolve, delay));
 };

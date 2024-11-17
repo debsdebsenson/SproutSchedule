@@ -248,7 +248,15 @@
 
     <!-- Conditionally render the ClassificationResults if there are any results -->
     {#if classificationResults.length > 0}
-        <ClassificationResults results={classificationResults} />
+        <ClassificationResults 
+            results={classificationResults} 
+            onTryAgain={() => {
+                classificationResults = [];  // Clear current results
+                files = [];                 // Clear any remaining files
+                isLoading = false;          // Ensure loading state is reset
+                setMessage('Please add new image'); // Prompt to upload another image
+            }} 
+        />
     {/if}
     
     <!-- Conditionally render the DuplicatePrompt if a duplicate file is detected -->

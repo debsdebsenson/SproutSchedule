@@ -4,77 +4,68 @@
   This component displays the classification results for images, including:
   - Preview image
   - Common and scientific names
-  - Basic information
-  - Wikipedia links (when available)
+  - Basic information with Wikipedia links (when available)
+  - Provides an alternative display when no classification data is found:
+    - Alerts the user that the classification was unsuccessful.
+    - Offers tips for improving classification results.
+    - Includes a "Try Again" button to reattempt classification.
   
   It handles various API response formats by checking multiple possible
   field names for each piece of information.
 -->
 
 <script lang="ts">
-    export let results: Array<any>; // Array of classification results from the API, each result should contain image preview and classification data
+    import { CircleAlert, Camera, RefreshCw } from 'lucide-svelte';
+
+    export let results: Array<any>;
+    export let onTryAgain: () => void;
 
     /**
      * Utility function to extract field values from result objects
      * Handles variations in API response field naming conventions
-     * 
-     * @param result - The classification result object
-     * @param fieldNames - Array of possible field names to check
-     * @returns The field value if found, null otherwise
      */
     function getFieldValue(result: any, fieldNames: string[]): string | null {
-        // Get all keys from the result object
         const keys = Object.keys(result);
-        
-        // Find the first key that matches any of the provided field names
-        // Normalize the key and field names by removing spaces and underscores
         const matchingKey = keys.find(key =>
             fieldNames.some(field => 
                 key.toLowerCase().replace(/[_\s]/g, '') === field.toLowerCase()
             )
         );
-        
-        // Return the value if found and not 'None', otherwise return null
         return matchingKey && result[matchingKey] !== 'None' ? result[matchingKey] : null;
     }
 
-    /**
-     * Extract Wikipedia link from result object and handles variations
-     */
     function getWikipediaLink(result: any): string | null {
         return getFieldValue(result, ['wikipedia', 'wikipedialink', 'link', 'wikipedia_link']);
     }
 
-    /**
-     * Extract common name from result object and handles variations
-     */
     function getCommonName(result: any): string | null {
         return getFieldValue(result, ['commonname', 'common', 'common_name']);
     }
 
-    /**
-     * Extract scientific name from result object and handles variations
-     */
     function getScientificName(result: any): string | null {
         return getFieldValue(result, ['scientificname', 'scientific', 'scientific_name']);
     }
 
-    /**
-     * Extract basic information from result object and handles variations
-     */
     function getBasicInformation(result: any): string | null {
         return getFieldValue(result, ['basicinformation', 'information', 'info', 'basicinfo']);
     }
+
+    /**
+     * Checks if a result has any meaningful classification data
+     */
+    function hasClassificationData(result: any): boolean {
+        return !!(getCommonName(result) || 
+                 getScientificName(result) || 
+                 getBasicInformation(result) || 
+                 getWikipediaLink(result));
+    }
 </script>
 
-<!-- Main container for classification results -->
 <div class="classification-results">
     <h2>Classification Results</h2>
     
-    <!-- Iterate through each classification result -->
     {#each results as result}
         <div class="result-item">
-            <!-- Image preview section -->
             <div>
                 <!-- svelte-ignore a11y-img-redundant-alt -->
                 <img 
@@ -84,26 +75,52 @@
                 />
             </div>
 
-            <!-- Classification details section -->
             <div class="result-details">
-                <!-- Display common and scientific names, fallback to 'Unknown' if not available -->
-                <h3>{getCommonName(result) || 'Unknown'} ({getScientificName(result) || 'Unknown'})</h3>
-                
-                <!-- Display basic information with fallback text -->
-                <p>{getBasicInformation(result) || 'No basic information available'}</p>
-                
-                <!-- Conditionally render Wikipedia link if available -->
-                {#if getWikipediaLink(result)}
-                    <p>
-                        More information available on
-                        <a 
-                            href={getWikipediaLink(result)} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                        >
-                            Wikipedia
-                        </a>
-                    </p>
+                {#if hasClassificationData(result)}
+                    <!-- Regular result display -->
+                    <h3>{getCommonName(result)} ({getScientificName(result)})</h3>
+                    <p>{getBasicInformation(result)}</p>
+                    {#if getWikipediaLink(result)}
+                        <p>
+                            More information available on
+                            <a 
+                                href={getWikipediaLink(result)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                            >
+                                Wikipedia
+                            </a>
+                        </p>
+                    {/if}
+                {:else}
+                    <!-- Empty state display -->
+                    <div class="empty-state">
+                        <div class="alert">
+                            <CircleAlert color="#ff3e98" />
+                            <div>
+                                <h4>Sorry! We couldn't classify the image with confidence</h4>
+                            </div>
+                        </div>
+
+                        <div class="help-card">
+                            <Camera color="#ff3e98" />
+
+                            <div class="tips">
+                                <h3>Tips for better results:</h3>
+                                <ul>
+                                    <li>• Ensure the subject is well-lit and in focus</li>
+                                    <li>• Try capturing the subject from different angles</li>
+                                    <li>• Include the whole subject in the frame</li>
+                                    <li>• Avoid blurry or dark images</li>
+                                </ul>
+                            </div>
+
+                            <button class="retry-button" on:click={onTryAgain}>
+                                <RefreshCw color="#ff3e98" />
+                                Try Another Photo
+                            </button>
+                        </div>
+                    </div>
                 {/if}
             </div>
         </div>
@@ -111,21 +128,20 @@
 </div>
 
 <style>
-    /* Center-align the entire results container */
     .classification-results {
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: 100%;
     }
 
-    /* Layout for individual result items */
     .result-item {
         display: flex;
         flex-direction: row;
         margin-bottom: 20px;
+        width: 100%;
     }
 
-    /* Image sizing and spacing */
     .classified-image {
         max-width: 100%;
         max-height: 200px;
@@ -133,14 +149,13 @@
         margin-right: 20px;
     }
 
-    /* Layout for result details */
     .result-details {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        flex-grow: 1;
     }
 
-    /* Wikipedia link styling */
     .result-details a {
         color: #0645AD;
         text-decoration: none;
@@ -148,5 +163,77 @@
 
     .result-details a:hover {
         text-decoration: underline;
+    }
+
+    /* Empty state styles */
+    .empty-state {
+        width: 100%;
+    }
+
+    .alert {
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem;
+        background-color: rgb(254 243 199 / 0.5);
+        border: 1px solid rgb(251 191 36);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .help-card {
+        background: white;
+        border: 1px solid rgb(229 231 235);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .tips {
+        margin: 1rem 0;
+        text-align: left;
+    }
+
+    .tips h3 {
+        color: rgb(17 24 39);
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .tips ul {
+        color: rgb(107 114 128);
+        font-size: 0.875rem;
+        list-style: none;
+        padding: 0;
+    }
+
+    .tips li {
+        margin: 0.25rem 0;
+    }
+
+    .retry-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: rgb(37 99 235);
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .retry-button:hover {
+        background-color: rgb(29 78 216);
+    }
+
+    .alert h4 {
+        color: rgb(146 64 14);
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 0;
     }
 </style>
