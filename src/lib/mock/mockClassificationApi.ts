@@ -1,4 +1,4 @@
-// src/lib/mock/mockClassificationApi.ts
+/** src/lib/mock/mockClassificationApi.ts  */
 
 /**
  * Mock API implementation for image classification during development.
@@ -28,19 +28,19 @@ const mockResponses: Record<string, ClassificationResponse> = {
     plant: {
         initialClassification: "Plant",
         detailedClassification: JSON.stringify({
-            "common name": "Garden Rose",
-            "scientific name": "Rosa × damascena",
-            "wikipedia link": "https://en.wikipedia.org/wiki/Rosa_×_damascena",
-            "basic information": "The Damask rose is a hybrid rose species, derived from Rosa gallica and Rosa moschata. It is known for its fine fragrance and is commonly used in perfumes and rose water production."
+            "commonName": "Garden Rose",
+            "scientificName": "Rosa × damascena",
+            "wikipediaLink": "https://en.wikipedia.org/wiki/Rosa_×_damascena",
+            "basicInformation": "The Damask rose is a hybrid rose species, derived from Rosa gallica and Rosa moschata. It is known for its fine fragrance and is commonly used in perfumes and rose water production."
         }, null, 2)
     },
     fungus: {
         initialClassification: "Fungus",
         detailedClassification: JSON.stringify({
-            "common name": "Fly Agaric",
-            "scientific name": "Amanita muscaria",
-            "wikipedia link": "https://en.wikipedia.org/wiki/Amanita_muscaria",
-            "basic information": "The Fly Agaric is a toxic mushroom known for its iconic red cap with white spots. It is found in various parts of the world and is often depicted in fairy-tale art."
+            "commonName": "Fly Agaric",
+            "scientificName": "Amanita muscaria",
+            "wikipediaLink": "https://en.wikipedia.org/wiki/Amanita_muscaria",
+            "basicInformation": "The Fly Agaric is a toxic mushroom known for its iconic red cap with white spots. It is found in various parts of the world and is often depicted in fairy-tale art."
         }, null, 2)
     },
     other: {

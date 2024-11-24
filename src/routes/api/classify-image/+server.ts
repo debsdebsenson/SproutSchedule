@@ -1,4 +1,4 @@
-/** +server.ts */
+/** src/routes/api/classify-image/+server.ts */
 
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -45,7 +45,6 @@ async function resizeImage(imageBuffer: Buffer): Promise<Buffer> {
     return imageBuffer;
   }
 }
-
 
 /**
  * Classifies an image using OpenAI's API to determine if it's a plant, fungus, or something else.

@@ -17,6 +17,8 @@
     import ClassificationResults from '$lib/components/ClassificationResults.svelte';
     import DuplicatePrompt from '$lib/components/DuplicatePrompt.svelte';
     import RandomLoadingSpinner from '$lib/components/loading/RandomSpinner.svelte';
+    import { identifiedItems } from '$lib/stores/identifiedItems';
+    import { fileToDataUrl } from '$lib/utils/fileUtils';
 
     // TBD: Remove for production!
     // Imports for the API call mock
@@ -93,7 +95,7 @@
      * delays to simulate network latency. It matches the structure of the
      * real API responses and includes error handling similar to the real API.
      */
-    async function uploadFiles() {
+     async function uploadFiles() {
         isLoading = true;
         setMessage('Uploading...');
         let results: any[] = [];
@@ -120,23 +122,68 @@
                         .replace("```", "");
                     parsedDetails = JSON.parse(json);
                 }
-                results.push({
+
+                // Convert file to dataURL before saving
+                const dataUrl = await fileToDataUrl(file.file);
+
+                const processedResult = {
                     file: file.file.name,
-                    preview: file.preview,
+                    preview: dataUrl, // Store as dataURL instead of Blob URL
                     initialClassification: result.initialClassification,
                     ...parsedDetails
-                });
+                };
+
+                // Only add to results if it has valid identification
+                if (parsedDetails.commonName !== 'None' && 
+                    parsedDetails.scientificName !== 'None' && 
+                    parsedDetails.information !== 'None') {
+                    results.push(processedResult);
+                }
             }
+
+            // Only save successfully identified items
+            if (results.length > 0) {
+                identifiedItems.addItems(results);
+            }
+
         } catch (error) {
             console.error('Upload failed:', error);
         } finally {
             isLoading = false;
-            setMessage('Upload and classification complete!');
-            classificationResults = results;
+            const successCount = results.length;
+            const totalCount = files.length;
+            
+            if (successCount === 0) {
+                setMessage('No items could be identified successfully.');
+            } else if (successCount < totalCount) {
+                setMessage(`${successCount} out of ${totalCount} items were identified and saved.`);
+            } else {
+                setMessage('All items were successfully identified and saved!');
+            }
+            
+            // Convert unidentified files to dataURLs for consistency
+            const unidentifiedFiles = await Promise.all(
+                files
+                    .filter(file => !results.some(r => r.file === file.file.name))
+                    .map(async file => ({
+                        file: file.file.name,
+                        preview: await fileToDataUrl(file.file),
+                        commonName: 'None',
+                        scientificName: 'None',
+                        information: 'None',
+                        wikipediaLink: 'None'
+                    }))
+            );
+                        
+            classificationResults = [...results, ...unidentifiedFiles];
+            
+            // Clean up Blob URLs
+            files.forEach(file => URL.revokeObjectURL(file.preview));
             files = [];
         }
     }
 
+    // TBD: when the upper uploadFiles function using the mocked results is removed, update this function so it has the same functionality minus the mocking.
     /**
      * Uploads files for classification.
      * Sends each file to the API and processes the results.

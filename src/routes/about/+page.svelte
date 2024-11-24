@@ -1,4 +1,4 @@
-<!-- +page.svelte -->
+<!-- /** src/routes/about/+page.svelte -->
 
 <svelte:head>
 	<title>About</title>

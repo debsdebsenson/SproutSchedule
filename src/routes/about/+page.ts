@@ -1,4 +1,4 @@
-/** +page.ts */
+/** src/routes/about/+page.ts */
 
 import { dev } from '$app/environment';
 

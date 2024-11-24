@@ -1,46 +1,45 @@
 <!-- src/routes/+page.svelte -->
 
-<script  lang="ts">
-	import FileUpload from './FileUpload.svelte';
-	import Geodata from '$lib/Geodata.svelte';
-	import welcome from '$lib/images/placeholder.webp';
-	import welcome_fallback from '$lib/images/placeholder.png';
+<script lang="ts">
+    import FileUpload from './FileUpload.svelte';
+    import Geodata from '$lib/Geodata.svelte';
+    import IdentifiedItemsList from '$lib/components/IdentifiedItemsList.svelte';
+    import welcome from '$lib/images/placeholder.webp';
+    import welcome_fallback from '$lib/images/placeholder.png';
+    
+    let city: string = 'Unknown';
+    let error: string | null = null;
 
-	let city: string = 'Unknown';
-	let error: string | null = null;
+    function handleCityUpdate(event: { detail: { city: string; }; }) {
+        city = event.detail.city;
+        error = null;
+    }
 
-	function handleCityUpdate(event: { detail: { city: string; }; }) {
-		city = event.detail.city;
-		error = null;
-	}
-
-	function handleError(event: { detail: { error: string | null; }; }) {
-		error = event.detail.error;
-	}
+    function handleError(event: { detail: { error: string | null; }; }) {
+        error = event.detail.error;
+    }
 </script>
 
 <svelte:head>
-	<title>Home</title>
-	<meta name="description" content="SproutSchedule" />
+    <title>Home</title>
+    <meta name="description" content="SproutSchedule" />
 </svelte:head>
 
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<!-- TBD: replace placeholder -->
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
-	</h1>
-
-	<FileUpload />
+    <h1>
+        <span class="welcome">
+            <picture>
+                <source srcset={welcome} type="image/webp" />
+                <img src={welcome_fallback} alt="Welcome" />
+            </picture>
+        </span>
+    </h1>
+    <FileUpload/>
 </section>
 
-<Geodata 
-    bind:city 
-    bind:error 
+<Geodata
+    bind:city
+    bind:error
     on:cityUpdated={handleCityUpdate}
     on:error={handleError}
 />
@@ -49,8 +48,8 @@
     {#if !error}
         <p>Your city: {city}</p>
     {/if}
+    <IdentifiedItemsList />
 </main>
-
 
 <style>
 	section {

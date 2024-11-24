@@ -12,6 +12,7 @@
 
 <script lang="ts">
     import CropModal from './CropModal.svelte';
+    import { fileToDataUrl } from '$lib/utils/fileUtils';
     
     // Props interface for image files
     export let files: Array<{ 
@@ -75,13 +76,17 @@
                 lastModified: Date.now(),
             });
             
-            // Preserve original image URL for future re-cropping
-            const originalPreview = files[fileIndex].originalPreview || files[fileIndex].preview;
+            // Convert the cropped image to dataURL
+            const dataUrl = await fileToDataUrl(newFile);
             
+            // Store original preview as dataURL if not already stored
+            const originalPreview = files[fileIndex].originalPreview || 
+                await fileToDataUrl(files[fileIndex].file);
+
             // Update file entry with new cropped version while maintaining original
             files[fileIndex] = {
                 id: files[fileIndex].id,
-                preview: croppedImageBlobUrl,    // Display cropped version
+                preview: dataUrl,    // Display cropped version
                 originalPreview: originalPreview,  // Keep original for re-cropping
                 file: newFile,
                 cropData: cropData           // Store crop area for re-editing
@@ -89,6 +94,9 @@
             
             // Force Svelte to recognize the array update
             files = [...files];
+            
+            // Clean up the temporary blob URL
+            URL.revokeObjectURL(croppedImageBlobUrl);
             
             return true;
         } catch (error) {
