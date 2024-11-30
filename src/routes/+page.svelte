@@ -34,7 +34,7 @@
             </picture>
         </span>
     </h1>
-    <FileUpload/>
+    <FileUpload city = {city} />
 </section>
 
 <Geodata
@@ -45,10 +45,7 @@
 />
 
 <main>
-    {#if !error}
-        <p>Your city: {city}</p>
-    {/if}
-    <IdentifiedItemsList />
+    <IdentifiedItemsList/>
 </main>
 
 <style>

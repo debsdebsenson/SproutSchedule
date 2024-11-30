@@ -113,7 +113,7 @@ export async function POST(formData: FormData) {
         return new Response(
             JSON.stringify({ error: 'Failed to process image or classify it' }), 
             { 
-                status: 500,
+                status: 200,
                 headers: {
                     'Content-Type': 'application/json'
                 }

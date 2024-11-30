@@ -25,6 +25,8 @@
     import { dev } from '$app/environment';
     import { POST as mockPost } from '$lib/mock/mockClassificationApi';
 
+    export let city : String;
+
     // State variables
     let files: any[] = []; // Array to store uploaded files
     let uploadStatus = ''; // Current status message of the upload process
@@ -130,8 +132,10 @@
                     file: file.file.name,
                     preview: dataUrl, // Store as dataURL instead of Blob URL
                     initialClassification: result.initialClassification,
+                    location: city,
                     ...parsedDetails
                 };
+                console.log(processedResult);
 
                 // Only add to results if it has valid identification
                 if (parsedDetails.commonName !== 'None' && 
@@ -279,6 +283,9 @@
 
 <!-- Main container for the file upload functionality -->
 <div class="file-upload">
+
+    <p>Your city: {city}</p>
+
     <!-- DropZone component for drag-and-drop file input -->
     <DropZone onFilesSelected={handleFiles} />
     

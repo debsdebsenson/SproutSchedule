@@ -10,7 +10,8 @@
 
 <script lang="ts">
   import { identifiedItems } from '../stores/identifiedItems'; // Store containing the identified items data
-  
+
+
   /**
    * Converts a timestamp to a localized date string
    * @param timestamp - Timestamp in milliseconds
