@@ -4,6 +4,7 @@
     import FileUpload from './FileUpload.svelte';
     import Geodata from '$lib/Geodata.svelte';
     import IdentifiedItemsList from '$lib/components/IdentifiedItemsList.svelte';
+    import ManualItemEntry from '$lib/components/ManualItemEntry.svelte';
     import welcome from '$lib/images/placeholder.webp';
     import welcome_fallback from '$lib/images/placeholder.png';
     
@@ -45,8 +46,13 @@
 />
 
 <main>
+    <!-- Container for manual entry and identified items list -->
+    <div class="items-container">
+    <ManualItemEntry city = {city} />
     <IdentifiedItemsList/>
-</main>
+    </div>
+    </main>
+    
 
 <style>
 	section {
@@ -76,4 +82,12 @@
 		top: 0;
 		display: block;
 	}
+
+    .items-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
+    }
 </style>

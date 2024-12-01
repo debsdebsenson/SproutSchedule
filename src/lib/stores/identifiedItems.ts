@@ -77,19 +77,19 @@ function createIdentifiedItemsStore() {
     const store = {
         subscribe,
 
-        addItems: (newItems: Omit<IdentifiedItem, 'id' | 'timestamp'>[]) => {
+        addItems: (newItems: Partial<IdentifiedItem>[]) => {
             update(items => {
-                // Filter out items that don't have proper identification
-                const validItems = newItems.filter(item => 
-                    item.commonName !== 'None' &&
-                    item.scientificName !== 'None' &&
-                    item.information !== 'None'
-                );
-
                 const itemsToAdd = newItems.map(item => ({
-                    ...item,
                     id: crypto.randomUUID(),
-                    timestamp: Date.now()
+                    file: item.file || '',
+                    preview: item.preview || 'welcome_fallback',
+                    initialClassification: item.initialClassification || 'Manual',
+                    commonName: item.commonName || 'Unknown',
+                    scientificName: item.scientificName || 'Unknown',
+                    information: item.information || 'No additional information',
+                    wikipediaLink: item.wikipediaLink || 'None',
+                    timestamp: Date.now(),
+                    location: item.location || ''
                 }));
 
                 const updatedItems = [...itemsToAdd, ...items];
