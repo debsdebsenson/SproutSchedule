@@ -1,14 +1,34 @@
 <!-- src/lib/components/ManualItemEntry.svelte -->
 
+<!--
+ A component that:
+ - Provides a modal interface for manually adding identified items
+ - Allows users to input details like common name, scientific name, location, etc.
+ - Supports optional image upload for the item
+ - Validates basic form input before submission
+ - Integrates with the identifiedItems store to add new entries
+-->
+
 <script lang="ts">
     import { identifiedItems } from '$lib/stores/identifiedItems';
     import type { IdentifiedItem } from '$lib/stores/identifiedItems';
     import { PlusCircle, X } from 'lucide-svelte';
     import fallbackImage from '$lib/images/placeholder.png';
     
+    /**
+     * City context passed to the component, used as default location
+     */
     export let city : string;
     
+    /**
+     * Controls the visibility of the modal
+     */
     let isModalOpen = false;
+    
+    /**
+     * Stores form data for a new item entry
+     * Initialized with empty or default values
+     */
     let formData: Partial<IdentifiedItem> = {
         commonName: '',
         scientificName: '',
@@ -17,25 +37,41 @@
         location: ''
     };
     
+    /**
+     * Opens the manual entry modal
+     */
     function openModal() {
         isModalOpen = true;
     }
     
+    /**
+     * Closes the modal and resets the form
+     */
     function closeModal() {
         isModalOpen = false;
         resetForm();
     }
     
+    /**
+     * Resets form data to initial empty state
+     */
     function resetForm() {
         formData = {
-        commonName: '',
-        scientificName: '',
-        information: '',
-        wikipediaLink: '',
-        location: ''
+            commonName: '',
+            scientificName: '',
+            information: '',
+            wikipediaLink: '',
+            location: ''
         };
     }
     
+    /**
+     * Handles form submission
+     * - Validates that at least some basic information is provided
+     * - Uses city as default location if no location is specified
+     * - Adds the item to the identifiedItems store
+     * - Closes the modal after successful submission
+     */
     function handleSubmit() {
         // Validate at least some basic information is provided
         if (!formData.commonName && !formData.scientificName) {
@@ -51,13 +87,18 @@
             ...formData,
             location: defaultLocation,
             file: formData.commonName || 'Manual Entry',
-            preview: fallbackImage
+            preview: formData.preview || fallbackImage
         }]);
         
         // Close modal and reset form
         closeModal();
     }
     
+    /**
+     * Handles file upload for preview image
+     * Reads the uploaded file and sets it as the preview image
+     * @param event - File input change event
+     */
     function handleFileUpload(event: Event) {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files[0]) {
@@ -69,96 +110,96 @@
             reader.readAsDataURL(file);
         }
     }
-    </script>
+</script>
     
-    <div class="manual-entry">
-        <button on:click={openModal} class="add-manual-btn">
-            <PlusCircle />
-            Add Manual Entry
-        </button>
-    
-        {#if isModalOpen}
-            <div class="modal-backdrop">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>Manually Add Item</h2>
-                        <button on:click={closeModal} class="close-btn">
-                            <X />
-                        </button>
-                    </div>
-                
-                    <form on:submit|preventDefault={handleSubmit}>
-                        <div class="form-group">
-                            <label for="preview">Preview Image (Optional)</label>
-                            <input 
-                                type="file" 
-                                id="preview" 
-                                accept="image/*"
-                                on:change={handleFileUpload}
-                            />
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="commonName">Common Name</label>
-                            <input 
-                                type="text" 
-                                id="commonName" 
-                                bind:value={formData.commonName}
-                                placeholder="e.g., Dandelion"
-                            />
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="scientificName">Scientific Name</label>
-                            <input 
-                                type="text" 
-                                id="scientificName" 
-                                bind:value={formData.scientificName}
-                                placeholder="e.g., Taraxacum officinale"
-                            />
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="information">Additional Information</label>
-                            <textarea 
-                                id="information" 
-                                bind:value={formData.information}
-                                placeholder="Describe the item, its characteristics, habitat, etc."
-                            ></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="wikipediaLink">Wikipedia Link (Optional)</label>
-                            <input 
-                                type="url" 
-                                id="wikipediaLink" 
-                                bind:value={formData.wikipediaLink}
-                                placeholder="https://en.wikipedia.org/wiki..."
-                            />
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="location">Location</label>
-                            <input 
-                                type="text" 
-                                id="location" 
-                                bind:value={formData.location}
-                                placeholder="Where was this item found?"
-                            />
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="submit-btn">Add Item</button>
-                            <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
-                        </div>
-                    </form>
+<div class="manual-entry">
+    <button on:click={openModal} class="add-manual-btn">
+        <PlusCircle />
+        Add Manual Entry
+    </button>
+
+    {#if isModalOpen}
+        <div class="modal-backdrop">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Manually Add Item</h2>
+                    <button on:click={closeModal} class="close-btn">
+                        <X />
+                    </button>
                 </div>
+            
+                <form on:submit|preventDefault={handleSubmit}>
+                    <div class="form-group">
+                        <label for="preview">Preview Image (Optional)</label>
+                        <input 
+                            type="file" 
+                            id="preview" 
+                            accept="image/*"
+                            on:change={handleFileUpload}
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commonName">Common Name</label>
+                        <input 
+                            type="text" 
+                            id="commonName" 
+                            bind:value={formData.commonName}
+                            placeholder="e.g., Dandelion"
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scientificName">Scientific Name</label>
+                        <input 
+                            type="text" 
+                            id="scientificName" 
+                            bind:value={formData.scientificName}
+                            placeholder="e.g., Taraxacum officinale"
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="information">Additional Information</label>
+                        <textarea 
+                            id="information" 
+                            bind:value={formData.information}
+                            placeholder="Describe the item, its characteristics, habitat, etc."
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="wikipediaLink">Wikipedia Link (Optional)</label>
+                        <input 
+                            type="url" 
+                            id="wikipediaLink" 
+                            bind:value={formData.wikipediaLink}
+                            placeholder="https://en.wikipedia.org/wiki..."
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            bind:value={formData.location}
+                            placeholder="Where was this item found?"
+                        />
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Add Item</button>
+                        <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
+                    </div>
+                </form>
             </div>
-        {/if}
-    </div>
+        </div>
+    {/if}
+</div>
     
-    <style>
-        .manual-entry {
+<style>
+    .manual-entry {
         position: relative;
     }
     
