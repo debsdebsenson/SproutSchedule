@@ -1,34 +1,21 @@
 <!-- src/lib/components/ManualItemEntry.svelte -->
-
-<!--
- A component that:
- - Provides a modal interface for manually adding identified items
- - Allows users to input details like common name, scientific name, location, etc.
- - Supports optional image upload for the item
- - Validates basic form input before submission
- - Integrates with the identifiedItems store to add new entries
--->
-
+ 
 <script lang="ts">
     import { identifiedItems } from '$lib/stores/identifiedItems';
     import type { IdentifiedItem } from '$lib/stores/identifiedItems';
-    import { PlusCircle, X } from 'lucide-svelte';
+    import { PlusCircle, X, Edit } from 'lucide-svelte';
     import fallbackImage from '$lib/images/placeholder.png';
     
-    /**
-     * City context passed to the component, used as default location
-     */
-    export let city : string;
+    /** City context passed to the component, used as default location */
+    export let city: string;
     
-    /**
-     * Controls the visibility of the modal
-     */
+    /** Optional existing item for editing */
+    export let existingItem: IdentifiedItem | null = null;
+    
+    /** Controls the visibility of the modal */
     let isModalOpen = false;
     
-    /**
-     * Stores form data for a new item entry
-     * Initialized with empty or default values
-     */
+    /** Stores form data for a new item entry or editing an existing item */
     let formData: Partial<IdentifiedItem> = {
         commonName: '',
         scientificName: '',
@@ -37,10 +24,28 @@
         location: ''
     };
     
+    /** Determines if the component is in edit mode */
+    $: isEditMode = !!existingItem;
+    
     /**
      * Opens the manual entry modal
+     * Populates form with existing item data if in edit mode
      */
     function openModal() {
+        if (existingItem) {
+        // Populate form with existing item data when editing
+        formData = {
+            commonName: existingItem.commonName !== 'Unknown' ? existingItem.commonName: '',
+            scientificName: existingItem.scientificName !== 'Unknown' ? existingItem.scientificName: '',
+            information: existingItem.information !== 'No additional information' ? existingItem.information : '',
+            wikipediaLink: existingItem.wikipediaLink !== 'None' ? existingItem.wikipediaLink : '',
+            location: existingItem.location !== 'Unknown' ? existingItem.location: '',
+            preview: existingItem.preview || ''
+        };
+    } else {
+            // Reset form for new entry
+            resetForm();
+        }
         isModalOpen = true;
     }
     
@@ -69,7 +74,7 @@
      * Handles form submission
      * - Validates that at least some basic information is provided
      * - Uses city as default location if no location is specified
-     * - Adds the item to the identifiedItems store
+     * - Adds or updates the item in the identifiedItems store
      * - Closes the modal after successful submission
      */
     function handleSubmit() {
@@ -78,18 +83,37 @@
             alert('Please provide at least a common name or scientific name.');
             return;
         }
-
+    
         // Use city as default location if no location is provided
         const defaultLocation = formData.location || city;
-        
-        // Add the item to the store
-        identifiedItems.addItems([{
-            ...formData,
-            location: defaultLocation,
-            file: formData.commonName || 'Manual Entry',
-            preview: formData.preview || fallbackImage
-        }]);
-        
+    
+        if (isEditMode && existingItem) {
+            // Update existing item
+            identifiedItems.update(items => 
+                items.map(item => 
+                    item.id === existingItem.id 
+                        ? {
+                            ...item,
+                            commonName: formData.commonName || 'Unknown',
+                            scientificName: formData.scientificName || 'Unknown',
+                            information: formData.information || 'No additional information',
+                            wikipediaLink: formData.wikipediaLink || 'None',
+                            location: formData.location || 'Unknown',
+                            preview: formData.preview || item.preview
+                        }
+                        : item
+                )
+            );
+        } else {
+            // Add new item
+            identifiedItems.addItems([{
+                ...formData,
+                location: defaultLocation,
+                file: formData.commonName || 'Manual Entry',
+                preview: formData.preview || fallbackImage
+            }]);
+        }
+    
         // Close modal and reset form
         closeModal();
     }
@@ -111,90 +135,93 @@
         }
     }
 </script>
-    
+
 <div class="manual-entry">
-    <button on:click={openModal} class="add-manual-btn">
-        <PlusCircle />
-        Add Manual Entry
-    </button>
+    <!-- Button changes based on mode: Add new or Edit existing -->
+    {#if isEditMode}
+        <button on:click={openModal} class="edit-btn">
+            <Edit size={20} />
+            Edit Item
+        </button>
+    {:else}
+        <button on:click={openModal} class="add-manual-btn">
+            <PlusCircle />
+            Add Manual Entry
+        </button>
+    {/if}
 
     {#if isModalOpen}
-        <div class="modal-backdrop">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Manually Add Item</h2>
-                    <button on:click={closeModal} class="close-btn">
-                        <X />
-                    </button>
-                </div>
-            
-                <form on:submit|preventDefault={handleSubmit}>
-                    <div class="form-group">
-                        <label for="preview">Preview Image (Optional)</label>
-                        <input 
-                            type="file" 
-                            id="preview" 
-                            accept="image/*"
-                            on:change={handleFileUpload}
-                        />
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="commonName">Common Name</label>
-                        <input 
-                            type="text" 
-                            id="commonName" 
-                            bind:value={formData.commonName}
-                            placeholder="e.g., Dandelion"
-                        />
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="scientificName">Scientific Name</label>
-                        <input 
-                            type="text" 
-                            id="scientificName" 
-                            bind:value={formData.scientificName}
-                            placeholder="e.g., Taraxacum officinale"
-                        />
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="information">Additional Information</label>
-                        <textarea 
-                            id="information" 
-                            bind:value={formData.information}
-                            placeholder="Describe the item, its characteristics, habitat, etc."
-                        ></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="wikipediaLink">Wikipedia Link (Optional)</label>
-                        <input 
-                            type="url" 
-                            id="wikipediaLink" 
-                            bind:value={formData.wikipediaLink}
-                            placeholder="https://en.wikipedia.org/wiki..."
-                        />
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="location">Location</label>
-                        <input 
-                            type="text" 
-                            id="location" 
-                            bind:value={formData.location}
-                            placeholder="Where was this item found?"
-                        />
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Add Item</button>
-                        <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
-                    </div>
-                </form>
+    <div class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{isEditMode ? 'Edit Item' : 'Manually Add Item'}</h2>
+                <button on:click={closeModal} class="close-btn">
+                    <X />
+                </button>
             </div>
+            <form on:submit|preventDefault={handleSubmit}>
+                <div class="form-group">
+                    <label for="preview">Preview Image (Optional)</label>
+                    <input 
+                        type="file" 
+                        id="preview" 
+                        accept="image/*"
+                        on:change={handleFileUpload}
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="commonName">Common Name</label>
+                    <input 
+                        type="text" 
+                        id="commonName" 
+                        bind:value={formData.commonName}
+                        placeholder="e.g., Dandelion"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="scientificName">Scientific Name</label>
+                    <input 
+                        type="text" 
+                        id="scientificName" 
+                        bind:value={formData.scientificName}
+                        placeholder="e.g., Taraxacum officinale"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="information">Additional Information</label>
+                    <textarea 
+                        id="information" 
+                        bind:value={formData.information}
+                        placeholder="Describe the item, its characteristics, habitat, etc."
+                    ></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="wikipediaLink">Wikipedia Link (Optional)</label>
+                    <input 
+                        type="url" 
+                        id="wikipediaLink" 
+                        bind:value={formData.wikipediaLink}
+                        placeholder="Optional: https://en.wikipedia.org/wiki/..."
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input 
+                        type="text" 
+                        id="location" 
+                        bind:value={formData.location}
+                        placeholder="Where was this item found?"
+                    />
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        {isEditMode ? 'Update Item' : 'Add Item'}
+                    </button>
+                    <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
+                </div>
+            </form>
         </div>
+    </div>
     {/if}
 </div>
     
@@ -312,5 +339,24 @@
     
     .cancel-btn:hover {
         background-color: rgb(209 213 219);
+    }
+
+    .edit-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background-color: rgb(249 115 22);
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .edit-btn:hover {
+        background-color: rgb(234 88 12);
     }
 </style>

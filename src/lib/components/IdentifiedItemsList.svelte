@@ -1,16 +1,10 @@
 <!-- src/lib/components/IdentifiedItemsList.svelte -->
 
-<!--
- A component that:
- - Displays a grid of identified items with their details and preview images
- - Shows a message when no items are present
- - Requires confirmation before removing individual items
- - Provides links to Wikipedia for additional information
--->
-
 <script lang="ts">
-    import { identifiedItems } from '../stores/identifiedItems'; // Store containing the identified items data
-  
+    import { identifiedItems } from '../stores/identifiedItems';
+    import ManualItemEntry from './ManualItemEntry.svelte';
+    import type { IdentifiedItem } from '../stores/identifiedItems';
+    
     /**
      * Converts a timestamp to a localized date string
      * @param timestamp - Timestamp in milliseconds
@@ -28,61 +22,64 @@
     function handleRemove(id: string, commonName: string) {
         // Show confirmation dialog before removing the item
         const confirmRemoval = confirm(`Are you sure you want to remove "${commonName}" from the identified items?`);
-        
         if (confirmRemoval) {
             identifiedItems.removeItem(id);
         }
     }
-  </script>
+</script>
     
-  <!-- Main container for the identified items list -->
-  <div class="identified-items">
-      <h2>Identified Items</h2>
-  
-      <!-- Conditional rendering based on items presence (shows empty state message when no items exist) -->
-      {#if $identifiedItems.length === 0}
-          <p class="empty-message">No items identified yet</p>
-      {:else}
-          <!-- Grid container for item cards -->
-          <div class="items-grid">
-              <!-- Iterates through each identified item and renders individual item cards with details -->
-              {#each $identifiedItems as item}
-                  <div class="item-card">
-                      <!-- Item preview image -->
-                      <img src={item.preview} alt={item.commonName} class="item-preview" />
-  
-                      <!-- Container for item metadata and actions like: name, classification, location, and timestamp -->
-                      <div class="item-details">
-                          <h3>{item.commonName}</h3>
-                          <p class="scientific-name">{item.scientificName}</p>
-                          <p class="classification">Type: {item.initialClassification}</p>
-                          
-                          <!-- Optional location display -->
-                          {#if item.location}
-                              <p class="location">Location: {item.location}</p>
-                          {/if}
-                          
-                          <p class="timestamp">Identified: {formatDate(item.timestamp)}</p>
-  
-                          <!-- Optional Wikipedia link -->
-                          {#if item.wikipediaLink !== 'None'}
-                              <a href={item.wikipediaLink} target="_blank" rel="noopener noreferrer">
-                                  Learn More
-                              </a>
-                          {/if}
-  
-                          <!-- Remove button with click handler -->
-                          <button class="remove-btn" on:click={() => handleRemove(item.id, item.commonName)}>
-                              Remove
-                          </button>
-                      </div>
-                  </div>
-              {/each}
-          </div>
-      {/if}
-  </div>
+<!-- Main container for the identified items list -->
+<div class="identified-items">
+    <h2>Identified Items</h2>
+    <!-- Conditional rendering based on items presence (shows empty state message when no items exist) -->
+    {#if $identifiedItems.length === 0}
+        <p class="empty-message">No items identified yet</p>
+    {:else}
+        <!-- Grid container for item cards -->
+        <div class="items-grid">
+            <!-- Iterates through each identified item and renders individual item cards with details -->
+            {#each $identifiedItems as item}
+                <div class="item-card">
+                    <!-- Item preview image -->
+                    <img src={item.preview} alt={item.commonName} class="item-preview" />
+                    <!-- Container for item metadata and actions like: name, classification, location, and timestamp -->
+                    <div class="item-details">
+                        <h3>{item.commonName}</h3>
+                        <p class="scientific-name">{item.scientificName}</p>
+                        <p class="classification">Type: {item.initialClassification}</p>
+                        <!-- Optional location display -->
+                        {#if item.location}
+                            <p class="location">Location: {item.location}</p>
+                        {/if}
+                        <p class="timestamp">Identified: {formatDate(item.timestamp)}</p>
+                        <!-- Optional Wikipedia link -->
+                        {#if item.wikipediaLink !== 'None'}
+                            <a href={item.wikipediaLink} target="_blank" rel="noopener noreferrer">
+                                Learn More
+                            </a>
+                        {/if}
+                        <div class="item-actions">
+                            <!-- Edit button using ManualItemEntry component -->
+                            <ManualItemEntry 
+                                city={item.location} 
+                                existingItem={item} 
+                            />
+                            <!-- Remove button with click handler -->
+                            <button 
+                                class="remove-btn" 
+                                on:click={() => handleRemove(item.id, item.commonName)}
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {/each}
+        </div>
+    {/if}
+</div>
     
-  <style>
+<style>
     /** Main container styling */
     .identified-items {
         margin-top: 2rem;
@@ -160,5 +157,18 @@
         text-align: center;
         color: #666;
         font-style: italic;
+    }
+
+    .item-details {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
     }
   </style>

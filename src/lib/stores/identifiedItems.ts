@@ -122,6 +122,26 @@ function createIdentifiedItemsStore() {
             });
         },
 
+        /**
+         * Updates an existing item in the store
+         * @param updateFn - Function that receives current items and returns updated items
+         */
+        update: (updateFn: (items: IdentifiedItem[]) => IdentifiedItem[]) => {
+            update(items => {
+                const updatedItems = updateFn(items);
+
+                if (browser) {
+                    try {
+                        localStorage.setItem('identifiedItems', JSON.stringify(updatedItems));
+                    } catch (error) {
+                        console.error('Error saving to localStorage:', error);
+                    }
+                }
+
+                return updatedItems;
+            });
+        },
+
         clearAll: () => {
             set([]);
 
