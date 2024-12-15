@@ -5,16 +5,15 @@
     import type { IdentifiedItem } from '$lib/stores/identifiedItems';
     import { PlusCircle, X, Edit } from 'lucide-svelte';
     import fallbackImage from '$lib/images/placeholder.png';
+    import ConfirmationMessage from './ConfirmationMessage.svelte';
     
     /** City context passed to the component, used as default location */
     export let city: string;
-    
     /** Optional existing item for editing */
     export let existingItem: IdentifiedItem | null = null;
     
     /** Controls the visibility of the modal */
     let isModalOpen = false;
-    
     /** Stores form data for a new item entry or editing an existing item */
     let formData: Partial<IdentifiedItem> = {
         commonName: '',
@@ -23,26 +22,28 @@
         wikipediaLink: '',
         location: ''
     };
+    /** Controls the display of confirmation message */
+    let confirmationMessage = '';
     
     /** Determines if the component is in edit mode */
     $: isEditMode = !!existingItem;
     
     /**
-     * Opens the manual entry modal
-     * Populates form with existing item data if in edit mode
-     */
+    * Opens the manual entry modal
+    * Populates form with existing item data if in edit mode
+    */
     function openModal() {
         if (existingItem) {
-        // Populate form with existing item data when editing
-        formData = {
-            commonName: existingItem.commonName !== 'Unknown' ? existingItem.commonName: '',
-            scientificName: existingItem.scientificName !== 'Unknown' ? existingItem.scientificName: '',
-            information: existingItem.information !== 'No additional information' ? existingItem.information : '',
-            wikipediaLink: existingItem.wikipediaLink !== 'None' ? existingItem.wikipediaLink : '',
-            location: existingItem.location !== 'Unknown' ? existingItem.location: '',
-            preview: existingItem.preview || ''
-        };
-    } else {
+            // Populate form with existing item data when editing
+            formData = {
+                commonName: existingItem.commonName !== 'Unknown' ? existingItem.commonName: '',
+                scientificName: existingItem.scientificName !== 'Unknown' ? existingItem.scientificName: '',
+                information: existingItem.information !== 'No additional information' ? existingItem.information : '',
+                wikipediaLink: existingItem.wikipediaLink !== 'None' ? existingItem.wikipediaLink : '',
+                location: existingItem.location !== 'Unknown' ? existingItem.location: '',
+                preview: existingItem.preview || ''
+            };
+        } else {
             // Reset form for new entry
             resetForm();
         }
@@ -50,16 +51,16 @@
     }
     
     /**
-     * Closes the modal and resets the form
-     */
+    * Closes the modal and resets the form
+    */
     function closeModal() {
         isModalOpen = false;
         resetForm();
     }
     
     /**
-     * Resets form data to initial empty state
-     */
+    * Resets form data to initial empty state
+    */
     function resetForm() {
         formData = {
             commonName: '',
@@ -71,39 +72,42 @@
     }
     
     /**
-     * Handles form submission
-     * - Validates that at least some basic information is provided
-     * - Uses city as default location if no location is specified
-     * - Adds or updates the item in the identifiedItems store
-     * - Closes the modal after successful submission
-     */
+    * Handles form submission
+    * - Validates that at least some basic information is provided
+    * - Uses city as default location if no location is specified
+    * - Adds or updates the item in the identifiedItems store
+    * - Closes the modal after successful submission
+    */
     function handleSubmit() {
         // Validate at least some basic information is provided
         if (!formData.commonName && !formData.scientificName) {
             alert('Please provide at least a common name or scientific name.');
             return;
         }
-    
+        
         // Use city as default location if no location is provided
         const defaultLocation = formData.location || city;
-    
+        
         if (isEditMode && existingItem) {
             // Update existing item
             identifiedItems.update(items => 
                 items.map(item => 
                     item.id === existingItem.id 
-                        ? {
-                            ...item,
-                            commonName: formData.commonName || 'Unknown',
-                            scientificName: formData.scientificName || 'Unknown',
-                            information: formData.information || 'No additional information',
-                            wikipediaLink: formData.wikipediaLink || 'None',
-                            location: formData.location || 'Unknown',
-                            preview: formData.preview || item.preview
-                        }
-                        : item
+                    ? {
+                        ...item,
+                        commonName: formData.commonName || 'Unknown',
+                        scientificName: formData.scientificName || 'Unknown',
+                        information: formData.information || 'No additional information',
+                        wikipediaLink: formData.wikipediaLink || 'None',
+                        location: formData.location || 'Unknown',
+                        preview: formData.preview || item.preview
+                    }
+                    : item
                 )
             );
+            
+            // Show update confirmation
+            confirmationMessage = `Updated "${formData.commonName || 'Item'}" successfully`;
         } else {
             // Add new item
             identifiedItems.addItems([{
@@ -112,17 +116,20 @@
                 file: formData.commonName || 'Manual Entry',
                 preview: formData.preview || fallbackImage
             }]);
+            
+            // Show add confirmation
+            confirmationMessage = `Added "${formData.commonName || 'New Item'}" successfully`;
         }
-    
+        
         // Close modal and reset form
         closeModal();
     }
     
     /**
-     * Handles file upload for preview image
-     * Reads the uploaded file and sets it as the preview image
-     * @param event - File input change event
-     */
+    * Handles file upload for preview image
+    * Reads the uploaded file and sets it as the preview image
+    * @param event - File input change event
+    */
     function handleFileUpload(event: Event) {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files[0]) {
@@ -134,7 +141,13 @@
             reader.readAsDataURL(file);
         }
     }
+
+    // Function to clear confirmation message
+    function clearConfirmationMessage() {
+        confirmationMessage = '';
+    }
 </script>
+
 
 <div class="manual-entry">
     <!-- Button changes based on mode: Add new or Edit existing -->
@@ -150,6 +163,12 @@
         </button>
     {/if}
 
+    <!-- Confirmation Message Component -->
+    <ConfirmationMessage 
+        message={confirmationMessage} 
+        onClear={clearConfirmationMessage}
+    />
+
     {#if isModalOpen}
     <div class="modal-backdrop">
         <div class="modal-content">
@@ -160,68 +179,77 @@
                 </button>
             </div>
             <form on:submit|preventDefault={handleSubmit}>
-                <div class="form-group">
-                    <label for="preview">Preview Image (Optional)</label>
-                    <input 
-                        type="file" 
-                        id="preview" 
-                        accept="image/*"
-                        on:change={handleFileUpload}
-                    />
-                </div>
-                <div class="form-group">
-                    <label for="commonName">Common Name</label>
-                    <input 
-                        type="text" 
-                        id="commonName" 
-                        bind:value={formData.commonName}
-                        placeholder="e.g., Dandelion"
-                    />
-                </div>
-                <div class="form-group">
-                    <label for="scientificName">Scientific Name</label>
-                    <input 
-                        type="text" 
-                        id="scientificName" 
-                        bind:value={formData.scientificName}
-                        placeholder="e.g., Taraxacum officinale"
-                    />
-                </div>
-                <div class="form-group">
-                    <label for="information">Additional Information</label>
-                    <textarea 
-                        id="information" 
-                        bind:value={formData.information}
-                        placeholder="Describe the item, its characteristics, habitat, etc."
-                    ></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="wikipediaLink">Wikipedia Link (Optional)</label>
-                    <input 
-                        type="url" 
-                        id="wikipediaLink" 
-                        bind:value={formData.wikipediaLink}
-                        placeholder="Optional: https://en.wikipedia.org/wiki/..."
-                    />
-                </div>
-                <div class="form-group">
-                    <label for="location">Location</label>
-                    <input 
-                        type="text" 
-                        id="location" 
-                        bind:value={formData.location}
-                        placeholder="Where was this item found?"
-                    />
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="submit-btn">
-                        {isEditMode ? 'Update Item' : 'Add Item'}
-                    </button>
-                    <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="preview">Preview Image (Optional)</label>
+                        <input 
+                            type="file" 
+                            id="preview" 
+                            accept="image/*"
+                            on:change={handleFileUpload}
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="commonName">Common Name</label>
+                        <input 
+                            type="text" 
+                            id="commonName" 
+                            bind:value={formData.commonName}
+                            placeholder="e.g., Dandelion"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="scientificName">Scientific Name</label>
+                        <input 
+                            type="text" 
+                            id="scientificName" 
+                            bind:value={formData.scientificName}
+                            placeholder="e.g., Taraxacum officinale"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="information">Additional Information</label>
+                        <textarea 
+                            id="information" 
+                            bind:value={formData.information}
+                            placeholder="Describe the item, its characteristics, habitat, etc."
+                        ></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="wikipediaLink">Wikipedia Link (Optional)</label>
+                        <input 
+                            type="url" 
+                            id="wikipediaLink" 
+                            bind:value={formData.wikipediaLink}
+                            placeholder="Optional: https://en.wikipedia.org/wiki/..."
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            bind:value={formData.location}
+                            placeholder="Where was this item found?"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="preview">Preview Image (Optional)</label>
+                        <input 
+                            type="file" 
+                            id="preview" 
+                            accept="image/*"
+                            on:change={handleFileUpload}
+                        />
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">
+                            {isEditMode ? 'Update Item' : 'Add Item'}
+                        </button>
+                        <button type="button" class="cancel-btn" on:click={closeModal}>Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
     {/if}
 </div>
     

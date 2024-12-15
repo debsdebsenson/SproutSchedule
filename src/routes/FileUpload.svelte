@@ -17,6 +17,7 @@
     import ClassificationResults from '$lib/components/ClassificationResults.svelte';
     import DuplicatePrompt from '$lib/components/DuplicatePrompt.svelte';
     import RandomLoadingSpinner from '$lib/components/loading/RandomSpinner.svelte';
+    import ConfirmationMessage from '$lib/components/ConfirmationMessage.svelte';
     import { identifiedItems } from '$lib/stores/identifiedItems';
     import { fileToDataUrl } from '$lib/utils/fileUtils';
 
@@ -235,15 +236,19 @@
 
     /**
      * Sets a temporary status message.
-     * Clears the message after 3 seconds.
+     * Updates the uploadStatus which will trigger the ConfirmationMessage.
      * @param message - Status message to display
      */
-    function setMessage(message: string) {
+     function setMessage(message: string) {
         uploadStatus = message;
         if (messageTimer) clearTimeout(messageTimer);
-        messageTimer = setTimeout(() => {
-            uploadStatus = '';
-        }, 3000);
+    }
+
+    /**
+     * Clears the upload status message
+     */
+    function clearMessage() {
+        uploadStatus = '';
     }
 
     /**
@@ -286,7 +291,7 @@
 
     <p>Your city: {city}</p>
 
-    <!-- DropZone component for drag-and-drop file input -->
+   <!-- DropZone component for drag-and-drop file input -->
     <DropZone onFilesSelected={handleFiles} />
     
     <!-- Conditionally render the ImagePreview and Upload button if files exist -->
@@ -295,11 +300,12 @@
         <button on:click={uploadFiles}>Upload Images</button>
     {/if}
 
-    <!-- Conditionally render the status message if it's set -->
-    {#if uploadStatus}
-        <p class="status-message">{uploadStatus}</p>
-    {/if}
-
+    <!-- Confirm that item has been added to list with message -->
+    <ConfirmationMessage 
+        message={uploadStatus} 
+        onClear={clearMessage}
+        duration={3000}
+    />
     <!-- Conditionally render the ClassificationResults if there are any results -->
     {#if classificationResults.length > 0}
         <ClassificationResults 
@@ -336,11 +342,4 @@
         margin: 0 auto;
     }
     
-    /* Styles for the status message */
-    .status-message {
-        margin-top: 10px;
-        padding: 10px;
-        background-color: rgba(251, 242, 210, 0.6);
-        border-left: 6px solid rgb(49, 80, 18);
-    }
 </style>
