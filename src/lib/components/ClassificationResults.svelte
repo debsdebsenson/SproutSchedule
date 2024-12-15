@@ -15,10 +15,17 @@
 -->
 
 <script lang="ts">
-    import { CircleAlert, Camera, RefreshCw } from 'lucide-svelte';
+    import { CircleAlert, Camera, RefreshCw, X } from 'lucide-svelte';
 
     export let results: Array<any>;
     export let onTryAgain: () => void;
+
+    /**
+     * Function to remove a specific result by clicking "x" on upper right corner of result
+    */
+    function removeResult(resultToRemove: any) {
+        results = results.filter(result => result !== resultToRemove);
+    }
 
     /**
      * Utility function to extract field values from result objects
@@ -66,6 +73,13 @@
     
     {#each results as result}
         <div class="result-item">
+            <button 
+                class="remove-result-button" 
+                on:click={() => removeResult(result)}
+                aria-label="Remove result"
+            >
+                <X color="#ff3e98" />
+            </button>
             <div>
                 <!-- svelte-ignore a11y-img-redundant-alt -->
                 <img 
@@ -140,6 +154,18 @@
         flex-direction: row;
         margin-bottom: 20px;
         width: 100%;
+        position: relative;
+    }
+
+    .remove-result-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 10px;
+        z-index: 10;
     }
 
     .classified-image {

@@ -1,3 +1,5 @@
+<!-- src/lib/components/IdentifiedItemsList.svelte -->
+
 <script lang="ts">
     import { identifiedItems } from '../stores/identifiedItems';
     import ManualItemEntry from './ManualItemEntry.svelte';
